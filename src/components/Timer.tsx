@@ -74,31 +74,55 @@ export default function Timer() {
   }
 
   return (
-    <section className="bg-teal-700 w-full p-8 flex flex-col justify-center items-center gap-6 rounded-xl">
-      <div className="bg-teal-800/30 w-full rounded-full flex">
+    <section className="w-[min(92vw,720px)] rounded-xl bg-teal-700 p-[clamp(1rem,2vw,2rem)] flex flex-col items-center justify-center gap-[clamp(1rem,2vw,1.5rem)]">
+      <div className="w-full rounded-full bg-teal-800/30 p-1 flex items-center gap-1 overflow-hidden">
         {(Object.keys(TIMER_LABELS) as TimerMode[]).map((mode) => (
           <button
             key={mode}
             onClick={() => handleModeChange(mode)}
-            className={`text-teal-50 w-1/3 h-full p-1 hover:font-semibold cursor-pointer rounded-full ${
-              activeMode === mode ? "bg-teal-600" : ""
-            }`}
+            className={`
+            flex-1 min-w-0 rounded-full
+            px-[clamp(0.4rem,1vw,0.75rem)] py-[clamp(0.45rem,1vw,0.7rem)]
+            text-teal-50 text-center font-medium
+            text-[clamp(0.65rem,1.2vw,1rem)]
+            whitespace-nowrap
+            transition-all
+            duration-300
+            hover:font-bold cursor-pointer
+            ${activeMode === mode ? "bg-teal-600" : ""}
+          `}
           >
-            {TIMER_LABELS[mode]}
+            {mode === "focus" && "Focus"}
+
+            {mode === "shortBreak" && (
+              <>
+                <span className="sm:hidden">Short</span>
+                <span className="hidden sm:inline">Short Break</span>
+              </>
+            )}
+
+            {mode === "longBreak" && (
+              <>
+                <span className="sm:hidden">Long</span>
+                <span className="hidden sm:inline">Long Break</span>
+              </>
+            )}
           </button>
         ))}
       </div>
 
-      <div className="text-8xl font-bold text-teal-100">
-        <span>{formatTime(timeLeft)}</span>
+      <div className="font-bold text-teal-100 leading-none">
+        <span className="text-[clamp(3rem,12vw,6rem)]">
+          {formatTime(timeLeft)}
+        </span>
       </div>
 
-      <div className="flex gap-4 justify-center items-center">
+      <div className="flex items-center justify-center gap-[clamp(0.75rem,2vw,1rem)]">
         <button
           onClick={handleReset}
-          className="bg-teal-800/30 p-3 flex justify-center items-center hover:scale-110 transition-transform duration-300 hover:bg-teal-800/50 cursor-pointer rounded-full"
+          className="rounded-full bg-teal-800/30 p-[clamp(0.65rem,1.4vw,1rem)] flex items-center justify-center cursor-pointer transition-transform duration-300 hover:scale-110 hover:bg-teal-800/50"
         >
-          <ReturnIcon className="size-6 text-white" />
+          <ReturnIcon className="size-[clamp(1.1rem,2vw,1.75rem)] text-white" />
         </button>
 
         {!isRunning ? (
@@ -106,39 +130,49 @@ export default function Timer() {
             onClick={() => setIsRunning(true)}
             disabled={isFinished}
             className="
-              group w-24 h-24 bg-teal-800 flex justify-center items-center
-              hover:bg-teal-900 rounded-full cursor-pointer transition-colors
-              disabled:bg-teal-900/50 disabled:cursor-not-allowed disabled:pointer-events-none
-            "
+            group flex items-center justify-center
+            w-[clamp(5rem,10vw,7rem)] h-[clamp(5rem,10vw,7rem)]
+            rounded-full bg-teal-800
+            cursor-pointer transition-colors
+            hover:bg-teal-900
+            disabled:bg-teal-900/50 disabled:cursor-not-allowed disabled:pointer-events-none
+          "
           >
             <PlayIcon
               className="
-                w-10 h-10 text-white transition-all duration-300
-                group-hover:w-8 group-hover:h-8
-                group-disabled:text-white/50
-              "
+              w-[clamp(2rem,4vw,3rem)] h-[clamp(2rem,4vw,3rem)]
+              text-white transition-all duration-300
+              group-hover:scale-90
+              group-disabled:text-white/50
+            "
             />
           </button>
         ) : (
           <button
             onClick={() => setIsRunning(false)}
-            className="group w-24 h-24 bg-teal-800 flex justify-center items-center hover:bg-teal-900 rounded-full cursor-pointer"
+            className="
+            group flex items-center justify-center
+            w-[clamp(5rem,10vw,7rem)] h-[clamp(5rem,10vw,7rem)]
+            rounded-full bg-teal-800
+            cursor-pointer transition-colors
+            hover:bg-teal-900
+          "
           >
-            <PauseIcon className="w-10 h-10 text-white transition-all duration-300 group-hover:w-8 group-hover:h-8" />
+            <PauseIcon className="w-[clamp(2rem,4vw,3rem)] h-[clamp(2rem,4vw,3rem)] text-white transition-all duration-300 group-hover:scale-90" />
           </button>
         )}
 
         <button
           onClick={handleSkip}
-          className="bg-teal-800/30 p-3 flex justify-center items-center hover:scale-110 transition-transform duration-300 hover:bg-teal-800/50 cursor-pointer rounded-full"
+          className="rounded-full bg-teal-800/30 p-[clamp(0.65rem,1.4vw,1rem)] flex items-center justify-center cursor-pointer transition-transform duration-300 hover:scale-110 hover:bg-teal-800/50"
         >
-          <SkipIcon className="size-6 text-white" />
+          <SkipIcon className="size-[clamp(1.1rem,2vw,1.75rem)] text-white" />
         </button>
       </div>
 
-      <div className="w-full h-3 bg-teal-950/40 rounded-full">
+      <div className="w-full h-[clamp(0.6rem,1vw,0.75rem)] rounded-full bg-teal-950/40 overflow-hidden">
         <div
-          className="h-full bg-teal-300 rounded-full transition-all duration-300"
+          className="h-full rounded-full bg-teal-300 transition-all duration-300"
           style={{ width: `${progressPercentage}%` }}
         />
       </div>

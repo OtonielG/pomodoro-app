@@ -3,15 +3,8 @@ import PlayIcon from "../assets/play-svgrepo-com.svg?react";
 import PauseIcon from "../assets/pause-svgrepo-com.svg?react";
 import SkipIcon from "../assets/skip-next-svgrepo-com.svg?react";
 
-import { useEffect, useState, useRef } from "react";
-
-type TimerMode = "focus" | "shortBreak" | "longBreak";
-
-const TIMER_DURATIONS: Record<TimerMode, number> = {
-  focus: 25 * 60,
-  shortBreak: 5 * 60,
-  longBreak: 15 * 60,
-};
+import { useEffect, useRef } from "react";
+import { useTimer, type TimerMode, TIMER_DURATIONS } from "../hooks/useTimer";
 
 const TIMER_LABELS: Record<TimerMode, string> = {
   focus: "Focus",
@@ -38,9 +31,15 @@ function playSound(audioRef: React.RefObject<HTMLAudioElement | null>) {
 }
 
 export default function Timer() {
-  const [activeMode, setActiveMode] = useState<TimerMode>("focus");
-  const [timeLeft, setTimeLeft] = useState(TIMER_DURATIONS.focus);
-  const [isRunning, setIsRunning] = useState(false);
+  const {
+    activeMode,
+    timeLeft,
+    isRunning,
+    handleModeChange,
+    handleReset,
+    handleSkip,
+    handleToggle,
+  } = useTimer();
 
   const clickSoundRef = useRef<HTMLAudioElement | null>(null);
   const alarmSoundRef = useRef<HTMLAudioElement | null>(null);
@@ -52,42 +51,18 @@ export default function Timer() {
   const isFinished = timeLeft === 0;
 
   useEffect(() => {
-    if (!isRunning || timeLeft === 0) return;
-
-    const intervalId = window.setInterval(() => {
-      setTimeLeft((previousTime) => {
-        if (previousTime <= 1) {
-          window.clearInterval(intervalId);
-          setIsRunning(false);
-          playSound(alarmSoundRef);
-          return 0;
-        }
-
-        return previousTime - 1;
-      });
-    }, 1000);
-
-    return () => window.clearInterval(intervalId);
-  }, [isRunning]);
-
-  useEffect(() => {
     document.title = `${formatTime(timeLeft)} - DeepFocus`;
   }, [timeLeft]);
 
-  function handleModeChange(mode: TimerMode) {
-    setActiveMode(mode);
-    setTimeLeft(TIMER_DURATIONS[mode]);
-    setIsRunning(false);
-  }
+  useEffect(() => {
+    if (timeLeft === 0) {
+      playSound(alarmSoundRef);
+    }
+  }, [timeLeft]);
 
-  function handleReset() {
-    setTimeLeft(TIMER_DURATIONS[activeMode]);
-    setIsRunning(false);
-  }
-
-  function handleSkip() {
-    const nextMode = activeMode === "focus" ? "shortBreak" : "focus";
-    handleModeChange(nextMode);
+  function handlePlayPause() {
+    handleToggle();
+    playSound(clickSoundRef);
   }
 
   return (
@@ -143,10 +118,7 @@ export default function Timer() {
         </button>
 
         <button
-          onClick={() => {
-            setIsRunning((prev) => !prev);
-            playSound(clickSoundRef);
-          }}
+          onClick={handlePlayPause}
           disabled={isFinished}
           className="
             group flex items-center justify-center
@@ -185,6 +157,7 @@ export default function Timer() {
           style={{ width: `${progressPercentage}%` }}
         />
       </div>
+
       <audio ref={clickSoundRef} src="/sounds/click-sound.mp3" preload="auto" />
       <audio ref={alarmSoundRef} src="/sounds/alarm-sound.mp3" preload="auto" />
     </section>

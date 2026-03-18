@@ -3,7 +3,7 @@ import PlayIcon from "../assets/play-svgrepo-com.svg?react";
 import PauseIcon from "../assets/pause-svgrepo-com.svg?react";
 import SkipIcon from "../assets/skip-next-svgrepo-com.svg?react";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 
 type TimerMode = "focus" | "shortBreak" | "longBreak";
 
@@ -28,10 +28,22 @@ function formatTime(seconds: number) {
     .padStart(2, "0")}`;
 }
 
+function playSound(audioRef: React.RefObject<HTMLAudioElement | null>) {
+  if (!audioRef.current) return;
+
+  audioRef.current.currentTime = 0;
+  audioRef.current.play().catch(() => {
+    console.log("Audio blocked by browser");
+  });
+}
+
 export default function Timer() {
   const [activeMode, setActiveMode] = useState<TimerMode>("focus");
   const [timeLeft, setTimeLeft] = useState(TIMER_DURATIONS.focus);
   const [isRunning, setIsRunning] = useState(false);
+
+  const clickSoundRef = useRef<HTMLAudioElement | null>(null);
+  const alarmSoundRef = useRef<HTMLAudioElement | null>(null);
 
   const totalTime = TIMER_DURATIONS[activeMode];
   const progressPercentage =
@@ -47,6 +59,7 @@ export default function Timer() {
         if (previousTime <= 1) {
           window.clearInterval(intervalId);
           setIsRunning(false);
+          playSound(alarmSoundRef);
           return 0;
         }
 
@@ -85,16 +98,16 @@ export default function Timer() {
             key={mode}
             onClick={() => handleModeChange(mode)}
             className={`
-            flex-1 min-w-0 rounded-full
-            px-[clamp(0.4rem,1vw,0.75rem)] py-[clamp(0.45rem,1vw,0.7rem)]
-            text-teal-50 text-center font-medium
-            text-[clamp(0.65rem,1.2vw,1rem)]
-            whitespace-nowrap
-            transition-all
-            duration-300
-            hover:font-bold cursor-pointer
-            ${activeMode === mode ? "bg-teal-600" : ""}
-          `}
+              flex-1 min-w-0 rounded-full
+              px-[clamp(0.4rem,1vw,0.75rem)] py-[clamp(0.45rem,1vw,0.7rem)]
+              text-teal-50 text-center font-medium
+              text-[clamp(0.65rem,1.2vw,1rem)]
+              whitespace-nowrap
+              transition-all
+              duration-300
+              hover:font-bold cursor-pointer
+              ${activeMode === mode ? "bg-teal-600" : ""}
+            `}
           >
             {mode === "focus" && "Focus"}
 
@@ -131,36 +144,42 @@ export default function Timer() {
 
         {!isRunning ? (
           <button
-            onClick={() => setIsRunning(true)}
+            onClick={() => {
+              setIsRunning(true);
+              playSound(clickSoundRef);
+            }}
             disabled={isFinished}
             className="
-            group flex items-center justify-center
-            w-[clamp(5rem,10vw,7rem)] h-[clamp(5rem,10vw,7rem)]
-            rounded-full bg-teal-800
-            cursor-pointer transition-colors
-            hover:bg-teal-900
-            disabled:bg-teal-900/50 disabled:cursor-not-allowed disabled:pointer-events-none
-          "
+              group flex items-center justify-center
+              w-[clamp(5rem,10vw,7rem)] h-[clamp(5rem,10vw,7rem)]
+              rounded-full bg-teal-800
+              cursor-pointer transition-colors
+              hover:bg-teal-900
+              disabled:bg-teal-900/50 disabled:cursor-not-allowed disabled:pointer-events-none
+            "
           >
             <PlayIcon
               className="
-              w-[clamp(2rem,4vw,3rem)] h-[clamp(2rem,4vw,3rem)]
-              text-white transition-all duration-300
-              group-hover:scale-90
-              group-disabled:text-white/50
-            "
+                w-[clamp(2rem,4vw,3rem)] h-[clamp(2rem,4vw,3rem)]
+                text-white transition-all duration-300
+                group-hover:scale-90
+                group-disabled:text-white/50
+              "
             />
           </button>
         ) : (
           <button
-            onClick={() => setIsRunning(false)}
+            onClick={() => {
+              setIsRunning(false);
+              playSound(clickSoundRef);
+            }}
             className="
-            group flex items-center justify-center
-            w-[clamp(5rem,10vw,7rem)] h-[clamp(5rem,10vw,7rem)]
-            rounded-full bg-teal-800
-            cursor-pointer transition-colors
-            hover:bg-teal-900
-          "
+              group flex items-center justify-center
+              w-[clamp(5rem,10vw,7rem)] h-[clamp(5rem,10vw,7rem)]
+              rounded-full bg-teal-800
+              cursor-pointer transition-colors
+              hover:bg-teal-900
+            "
           >
             <PauseIcon className="w-[clamp(2rem,4vw,3rem)] h-[clamp(2rem,4vw,3rem)] text-white transition-all duration-300 group-hover:scale-90" />
           </button>
@@ -180,6 +199,8 @@ export default function Timer() {
           style={{ width: `${progressPercentage}%` }}
         />
       </div>
+      <audio ref={clickSoundRef} src="/sounds/click-sound.mp3" preload="auto" />
+      <audio ref={alarmSoundRef} src="/sounds/alarm-sound.mp3" preload="auto" />
     </section>
   );
 }

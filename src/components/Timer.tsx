@@ -142,22 +142,24 @@ export default function Timer() {
           <ReturnIcon className="size-[clamp(1.1rem,2vw,1.75rem)] text-white" />
         </button>
 
-        {!isRunning ? (
-          <button
-            onClick={() => {
-              setIsRunning(true);
-              playSound(clickSoundRef);
-            }}
-            disabled={isFinished}
-            className="
-              group flex items-center justify-center
-              w-[clamp(5rem,10vw,7rem)] h-[clamp(5rem,10vw,7rem)]
-              rounded-full bg-teal-800
-              cursor-pointer transition-colors
-              hover:bg-teal-900
-              disabled:bg-teal-900/50 disabled:cursor-not-allowed disabled:pointer-events-none
-            "
-          >
+        <button
+          onClick={() => {
+            setIsRunning((prev) => !prev);
+            playSound(clickSoundRef);
+          }}
+          disabled={isFinished}
+          className="
+            group flex items-center justify-center
+            w-[clamp(5rem,10vw,7rem)] h-[clamp(5rem,10vw,7rem)]
+            rounded-full bg-teal-800
+            cursor-pointer transition-colors
+            hover:bg-teal-900
+            disabled:bg-teal-900/50 disabled:cursor-not-allowed disabled:pointer-events-none
+          "
+        >
+          {isRunning ? (
+            <PauseIcon className="w-[clamp(2rem,4vw,3rem)] h-[clamp(2rem,4vw,3rem)] text-white transition-all duration-300 group-hover:scale-90" />
+          ) : (
             <PlayIcon
               className="
                 w-[clamp(2rem,4vw,3rem)] h-[clamp(2rem,4vw,3rem)]
@@ -166,24 +168,8 @@ export default function Timer() {
                 group-disabled:text-white/50
               "
             />
-          </button>
-        ) : (
-          <button
-            onClick={() => {
-              setIsRunning(false);
-              playSound(clickSoundRef);
-            }}
-            className="
-              group flex items-center justify-center
-              w-[clamp(5rem,10vw,7rem)] h-[clamp(5rem,10vw,7rem)]
-              rounded-full bg-teal-800
-              cursor-pointer transition-colors
-              hover:bg-teal-900
-            "
-          >
-            <PauseIcon className="w-[clamp(2rem,4vw,3rem)] h-[clamp(2rem,4vw,3rem)] text-white transition-all duration-300 group-hover:scale-90" />
-          </button>
-        )}
+          )}
+        </button>
 
         <button
           onClick={handleSkip}

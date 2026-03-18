@@ -3,134 +3,108 @@ import PlayIcon from "../assets/play-svgrepo-com.svg?react";
 import PauseIcon from "../assets/pause-svgrepo-com.svg?react";
 import SkipIcon from "../assets/skip-next-svgrepo-com.svg?react";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 
-interface Time {
-  minutes: number;
-  seconds: number;
-  label: TimesSet;
-}
+type TimerMode = "focus" | "shortBreak" | "longBreak";
 
-interface DefaultTimes {
-  focus: Time;
-  shortBreak: Time;
-  longBreak: Time;
-}
-
-const initialTimers: DefaultTimes = {
-  focus: { minutes: 25, seconds: 0, label: "focus" },
-  shortBreak: { minutes: 5, seconds: 0, label: "shortBreak" },
-  longBreak: { minutes: 15, seconds: 0, label: "longBreak" },
+const TIMER_DURATIONS: Record<TimerMode, number> = {
+  focus: 25 * 60,
+  shortBreak: 5 * 60,
+  longBreak: 15 * 60,
 };
 
-type TimesSet = "focus" | "shortBreak" | "longBreak";
+const TIMER_LABELS: Record<TimerMode, string> = {
+  focus: "Focus",
+  shortBreak: "Short Break",
+  longBreak: "Long Break",
+};
 
 export default function Timer() {
-  const [timer, setTimer] = useState<Time>(initialTimers.focus);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [isDisabled, setIsDisabled] = useState(false);
-  const timerActive = useRef(timer);
+  const [activeMode, setActiveMode] = useState<TimerMode>("focus");
+  const [timeLeft, setTimeLeft] = useState(TIMER_DURATIONS.focus);
+  const [isRunning, setIsRunning] = useState(false);
+
+  const totalTime = TIMER_DURATIONS[activeMode];
+  const progressPercentage =
+    totalTime > 0 ? ((totalTime - timeLeft) / totalTime) * 100 : 0;
+
+  const isFinished = timeLeft === 0;
 
   useEffect(() => {
-    if (!isPlaying) return;
+    if (!isRunning || timeLeft === 0) return;
 
-    const pomodoroTimer = setInterval(() => {
-      setTimer((prev) => {
-        if (prev.seconds === 0) {
-          return { ...prev, minutes: prev.minutes - 1, seconds: 59 };
+    const intervalId = window.setInterval(() => {
+      setTimeLeft((previousTime) => {
+        if (previousTime <= 1) {
+          window.clearInterval(intervalId);
+          setIsRunning(false);
+          return 0;
         }
 
-        if (prev.minutes === 0 && prev.seconds === 1) {
-          setIsPlaying(false);
-          setIsDisabled(true);
-        }
-
-        return { ...prev, seconds: prev.seconds - 1 };
+        return previousTime - 1;
       });
-    }, 100);
+    }, 1000);
 
-    return () => clearInterval(pomodoroTimer);
-  }, [isPlaying]);
+    return () => window.clearInterval(intervalId);
+  }, [isRunning, timeLeft]);
 
-  function handleTimerChange(id: TimesSet) {
-    if (isDisabled) {
-      setIsDisabled(false);
-    }
-
-    setTimer(initialTimers[id]);
-    timerActive.current = initialTimers[id];
-    setIsPlaying(false);
+  function handleModeChange(mode: TimerMode) {
+    setActiveMode(mode);
+    setTimeLeft(TIMER_DURATIONS[mode]);
+    setIsRunning(false);
   }
 
-  function resetTimer() {
-    if (isDisabled) {
-      setIsDisabled(false);
-    }
-
-    setTimer(timerActive.current);
-    setIsPlaying(false);
+  function handleReset() {
+    setTimeLeft(TIMER_DURATIONS[activeMode]);
+    setIsRunning(false);
   }
 
-  function skipTimer() {
-    if (timerActive.current.label !== "focus") {
-      handleTimerChange("focus");
-      return;
-    }
-
-    handleTimerChange("shortBreak");
+  function handleSkip() {
+    const nextMode = activeMode === "focus" ? "shortBreak" : "focus";
+    handleModeChange(nextMode);
   }
 
-  const totalSeconds = timerActive.current.minutes * 60;
-  const remainingSeconds = timer.minutes * 60 + timer.seconds;
-  const elapsedSeconds = totalSeconds - remainingSeconds;
-  const progressPercent =
-    totalSeconds > 0 ? (elapsedSeconds / totalSeconds) * 100 : 0;
+  function formatTime(seconds: number) {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+
+    return `${minutes.toString().padStart(2, "0")}:${remainingSeconds
+      .toString()
+      .padStart(2, "0")}`;
+  }
 
   return (
     <section className="bg-teal-700 w-full p-8 flex flex-col justify-center items-center gap-6 rounded-xl">
-      <div className="bg-teal-800/30 w-full rounded-full">
-        <button
-          onClick={() => handleTimerChange("focus")}
-          className={`text-teal-50 w-1/3 h-full p-1 
-          hover:font-semibold cursor-pointer rounded-full 
-          ${timerActive.current.label === "focus" && "bg-teal-600"}`}
-        >
-          Focus
-        </button>
-        <button
-          onClick={() => handleTimerChange("shortBreak")}
-          className={`text-teal-50 w-1/3 h-full p-1 
-          hover:font-semibold cursor-pointer rounded-full 
-          ${timerActive.current.label === "shortBreak" && "bg-teal-600"}`}
-        >
-          Short Break
-        </button>
-        <button
-          onClick={() => handleTimerChange("longBreak")}
-          className={`text-teal-50 w-1/3 h-full p-1 
-          hover:font-semibold cursor-pointer rounded-full 
-          ${timerActive.current.label === "longBreak" && "bg-teal-600"}`}
-        >
-          Long Break
-        </button>
+      <div className="bg-teal-800/30 w-full rounded-full flex">
+        {(Object.keys(TIMER_LABELS) as TimerMode[]).map((mode) => (
+          <button
+            key={mode}
+            onClick={() => handleModeChange(mode)}
+            className={`text-teal-50 w-1/3 h-full p-1 hover:font-semibold cursor-pointer rounded-full ${
+              activeMode === mode ? "bg-teal-600" : ""
+            }`}
+          >
+            {TIMER_LABELS[mode]}
+          </button>
+        ))}
       </div>
+
       <div className="text-8xl font-bold text-teal-100">
-        <span>
-          {timer.minutes.toString().padStart(2, "0")}:
-          {timer.seconds.toString().padStart(2, "0")}
-        </span>
+        <span>{formatTime(timeLeft)}</span>
       </div>
+
       <div className="flex gap-4 justify-center items-center">
         <button
-          onClick={resetTimer}
+          onClick={handleReset}
           className="bg-teal-800/30 p-3 flex justify-center items-center hover:scale-110 transition-transform duration-300 hover:bg-teal-800/50 cursor-pointer rounded-full"
         >
           <ReturnIcon className="size-6 text-white" />
         </button>
-        {!isPlaying ? (
+
+        {!isRunning ? (
           <button
-            onClick={() => setIsPlaying(true)}
-            disabled={isDisabled}
+            onClick={() => setIsRunning(true)}
+            disabled={isFinished}
             className="
               group w-24 h-24 bg-teal-800 flex justify-center items-center
               hover:bg-teal-900 rounded-full cursor-pointer transition-colors
@@ -147,23 +121,25 @@ export default function Timer() {
           </button>
         ) : (
           <button
-            onClick={() => setIsPlaying(false)}
+            onClick={() => setIsRunning(false)}
             className="group w-24 h-24 bg-teal-800 flex justify-center items-center hover:bg-teal-900 rounded-full cursor-pointer"
           >
             <PauseIcon className="w-10 h-10 text-white transition-all duration-300 group-hover:w-8 group-hover:h-8" />
           </button>
         )}
+
         <button
-          onClick={skipTimer}
+          onClick={handleSkip}
           className="bg-teal-800/30 p-3 flex justify-center items-center hover:scale-110 transition-transform duration-300 hover:bg-teal-800/50 cursor-pointer rounded-full"
         >
           <SkipIcon className="size-6 text-white" />
         </button>
       </div>
+
       <div className="w-full h-3 bg-teal-950/40 rounded-full">
         <div
           className="h-full bg-teal-300 rounded-full transition-all duration-300"
-          style={{ width: `${progressPercent}%` }}
+          style={{ width: `${progressPercentage}%` }}
         />
       </div>
     </section>

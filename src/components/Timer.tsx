@@ -5,21 +5,13 @@ import SkipIcon from "../assets/skip-next-svgrepo-com.svg?react";
 
 import { useEffect, useRef } from "react";
 import { useTimer, type TimerMode, TIMER_DURATIONS } from "../hooks/useTimer";
+import { formatTime } from "../utils/formatTime";
 
 const TIMER_LABELS: Record<TimerMode, string> = {
   focus: "Focus",
   shortBreak: "Short Break",
   longBreak: "Long Break",
 };
-
-function formatTime(seconds: number) {
-  const minutes = Math.floor(seconds / 60);
-  const remainingSeconds = seconds % 60;
-
-  return `${minutes.toString().padStart(2, "0")}:${remainingSeconds
-    .toString()
-    .padStart(2, "0")}`;
-}
 
 function playSound(audioRef: React.RefObject<HTMLAudioElement | null>) {
   if (!audioRef.current) return;

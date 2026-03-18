@@ -19,6 +19,15 @@ const TIMER_LABELS: Record<TimerMode, string> = {
   longBreak: "Long Break",
 };
 
+function formatTime(seconds: number) {
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = seconds % 60;
+
+  return `${minutes.toString().padStart(2, "0")}:${remainingSeconds
+    .toString()
+    .padStart(2, "0")}`;
+}
+
 export default function Timer() {
   const [activeMode, setActiveMode] = useState<TimerMode>("focus");
   const [timeLeft, setTimeLeft] = useState(TIMER_DURATIONS.focus);
@@ -46,7 +55,11 @@ export default function Timer() {
     }, 1000);
 
     return () => window.clearInterval(intervalId);
-  }, [isRunning, timeLeft]);
+  }, [isRunning]);
+
+  useEffect(() => {
+    document.title = `${formatTime(timeLeft)} - DeepFocus`;
+  }, [timeLeft]);
 
   function handleModeChange(mode: TimerMode) {
     setActiveMode(mode);
@@ -62,15 +75,6 @@ export default function Timer() {
   function handleSkip() {
     const nextMode = activeMode === "focus" ? "shortBreak" : "focus";
     handleModeChange(nextMode);
-  }
-
-  function formatTime(seconds: number) {
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
-
-    return `${minutes.toString().padStart(2, "0")}:${remainingSeconds
-      .toString()
-      .padStart(2, "0")}`;
   }
 
   return (

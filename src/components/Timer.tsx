@@ -4,9 +4,10 @@ import PauseIcon from "../assets/pause-svgrepo-com.svg?react";
 import SkipIcon from "../assets/skip-next-svgrepo-com.svg?react";
 import SettingsIcon from "../assets/settings-gear-svgrepo-com.svg?react";
 
-import { useEffect, useRef } from "react";
-import { useTimer, type TimerMode, TIMER_DURATIONS } from "../hooks/useTimer";
+import { useEffect, useRef, useState } from "react";
+import { useTimer, type TimerMode } from "../hooks/useTimer";
 import { formatTime } from "../utils/formatTime";
+import SettingsModal from "./SettingsModal";
 
 const TIMER_LABELS: Record<TimerMode, string> = {
   focus: "Focus",
@@ -28,16 +29,20 @@ export default function Timer() {
     activeMode,
     timeLeft,
     isRunning,
+    durations,
     handleModeChange,
     handleReset,
     handleSkip,
     handleToggle,
+    updateDurations,
   } = useTimer();
+
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   const clickSoundRef = useRef<HTMLAudioElement | null>(null);
   const alarmSoundRef = useRef<HTMLAudioElement | null>(null);
 
-  const totalTime = TIMER_DURATIONS[activeMode];
+  const totalTime = durations[activeMode];
   const progressPercentage =
     totalTime > 0 ? ((totalTime - timeLeft) / totalTime) * 100 : 0;
 
@@ -96,6 +101,7 @@ export default function Timer() {
         </div>
 
         <button
+          onClick={() => setIsSettingsOpen(true)}
           aria-label="Open settings"
           className="group bg-teal-900/90 p-2.5 rounded-full hover:bg-teal-800 cursor-pointer shrink-0 ring-1 ring-white/10 transition-colors"
         >
@@ -160,6 +166,17 @@ export default function Timer() {
 
       <audio ref={clickSoundRef} src="/sounds/click-sound.mp3" preload="auto" />
       <audio ref={alarmSoundRef} src="/sounds/alarm-sound.mp3" preload="auto" />
+
+      <SettingsModal
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+        currentDurations={{
+          focus: durations.focus / 60,
+          shortBreak: durations.shortBreak / 60,
+          longBreak: durations.longBreak / 60,
+        }}
+        onSave={updateDurations}
+      />
     </section>
   );
 }

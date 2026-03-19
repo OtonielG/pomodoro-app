@@ -2,15 +2,22 @@ import { useEffect, useState } from "react";
 
 export type TimerMode = "focus" | "shortBreak" | "longBreak";
 
-export const TIMER_DURATIONS: Record<TimerMode, number> = {
+export type TimerDurations = Record<TimerMode, number>;
+
+const DEFAULT_TIMER_DURATIONS: TimerDurations = {
   focus: 25 * 60,
   shortBreak: 5 * 60,
   longBreak: 15 * 60,
 };
 
 export function useTimer(initialMode: TimerMode = "focus") {
+  const [durations, setDurations] = useState<TimerDurations>(
+    DEFAULT_TIMER_DURATIONS,
+  );
   const [activeMode, setActiveMode] = useState<TimerMode>(initialMode);
-  const [timeLeft, setTimeLeft] = useState(TIMER_DURATIONS[initialMode]);
+  const [timeLeft, setTimeLeft] = useState(
+    DEFAULT_TIMER_DURATIONS[initialMode],
+  );
   const [isRunning, setIsRunning] = useState(false);
 
   useEffect(() => {
@@ -32,12 +39,12 @@ export function useTimer(initialMode: TimerMode = "focus") {
 
   function handleModeChange(mode: TimerMode) {
     setActiveMode(mode);
-    setTimeLeft(TIMER_DURATIONS[mode]);
+    setTimeLeft(durations[mode]);
     setIsRunning(false);
   }
 
   function handleReset() {
-    setTimeLeft(TIMER_DURATIONS[activeMode]);
+    setTimeLeft(durations[activeMode]);
     setIsRunning(false);
   }
 
@@ -51,14 +58,27 @@ export function useTimer(initialMode: TimerMode = "focus") {
     setIsRunning((prev) => !prev);
   }
 
+  function updateDurations(newDurationsInMinutes: Record<TimerMode, number>) {
+    const newDurationsInSeconds: TimerDurations = {
+      focus: newDurationsInMinutes.focus * 60,
+      shortBreak: newDurationsInMinutes.shortBreak * 60,
+      longBreak: newDurationsInMinutes.longBreak * 60,
+    };
+
+    setDurations(newDurationsInSeconds);
+    setTimeLeft(newDurationsInSeconds[activeMode]);
+    setIsRunning(false);
+  }
+
   return {
     activeMode,
     timeLeft,
     isRunning,
-    setIsRunning,
+    durations,
     handleModeChange,
     handleReset,
     handleSkip,
     handleToggle,
+    updateDurations,
   };
 }

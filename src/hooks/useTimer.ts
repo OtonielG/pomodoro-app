@@ -10,52 +10,165 @@ const DEFAULT_TIMER_DURATIONS: TimerDurations = {
   longBreak: 15 * 60,
 };
 
+const TIMER_STORAGE_KEY = "deepfocus-timer-state";
+
+type StoredTimerState = {
+  durations: TimerDurations;
+  activeMode: TimerMode;
+  timeLeft: number;
+  isRunning: boolean;
+  lastUpdatedAt: number | null;
+};
+
+function getInitialState(initialMode: TimerMode): StoredTimerState {
+  const defaultState: StoredTimerState = {
+    durations: DEFAULT_TIMER_DURATIONS,
+    activeMode: initialMode,
+    timeLeft: DEFAULT_TIMER_DURATIONS[initialMode],
+    isRunning: false,
+    lastUpdatedAt: null,
+  };
+
+  try {
+    const savedState = localStorage.getItem(TIMER_STORAGE_KEY);
+
+    if (!savedState) return defaultState;
+
+    const parsedState: StoredTimerState = JSON.parse(savedState);
+
+    const safeDurations =
+      parsedState.durations &&
+      typeof parsedState.durations.focus === "number" &&
+      typeof parsedState.durations.shortBreak === "number" &&
+      typeof parsedState.durations.longBreak === "number"
+        ? parsedState.durations
+        : DEFAULT_TIMER_DURATIONS;
+
+    const safeActiveMode: TimerMode =
+      parsedState.activeMode === "focus" ||
+      parsedState.activeMode === "shortBreak" ||
+      parsedState.activeMode === "longBreak"
+        ? parsedState.activeMode
+        : initialMode;
+
+    let safeTimeLeft =
+      typeof parsedState.timeLeft === "number"
+        ? parsedState.timeLeft
+        : safeDurations[safeActiveMode];
+
+    let safeIsRunning =
+      typeof parsedState.isRunning === "boolean"
+        ? parsedState.isRunning
+        : false;
+
+    const safeLastUpdatedAt =
+      typeof parsedState.lastUpdatedAt === "number"
+        ? parsedState.lastUpdatedAt
+        : null;
+
+    if (safeIsRunning && safeLastUpdatedAt) {
+      const elapsedSeconds = Math.floor(
+        (Date.now() - safeLastUpdatedAt) / 1000,
+      );
+
+      safeTimeLeft = Math.max(safeTimeLeft - elapsedSeconds, 0);
+
+      if (safeTimeLeft === 0) {
+        safeIsRunning = false;
+      }
+    }
+
+    return {
+      durations: safeDurations,
+      activeMode: safeActiveMode,
+      timeLeft: safeTimeLeft,
+      isRunning: safeIsRunning,
+      lastUpdatedAt: safeIsRunning ? Date.now() : null,
+    };
+  } catch {
+    return defaultState;
+  }
+}
+
 export function useTimer(initialMode: TimerMode = "focus") {
-  const [durations, setDurations] = useState<TimerDurations>(
-    DEFAULT_TIMER_DURATIONS,
+  const [state, setState] = useState<StoredTimerState>(() =>
+    getInitialState(initialMode),
   );
-  const [activeMode, setActiveMode] = useState<TimerMode>(initialMode);
-  const [timeLeft, setTimeLeft] = useState(
-    DEFAULT_TIMER_DURATIONS[initialMode],
-  );
-  const [isRunning, setIsRunning] = useState(false);
+
+  const { durations, activeMode, timeLeft, isRunning } = state;
 
   useEffect(() => {
     if (!isRunning || timeLeft === 0) return;
 
     const intervalId = window.setInterval(() => {
-      setTimeLeft((previousTime) => {
-        if (previousTime <= 1) {
-          setIsRunning(false);
-          return 0;
+      setState((previousState) => {
+        if (previousState.timeLeft <= 1) {
+          return {
+            ...previousState,
+            timeLeft: 0,
+            isRunning: false,
+            lastUpdatedAt: null,
+          };
         }
 
-        return previousTime - 1;
+        return {
+          ...previousState,
+          timeLeft: previousState.timeLeft - 1,
+          lastUpdatedAt: Date.now(),
+        };
       });
     }, 1000);
 
     return () => window.clearInterval(intervalId);
   }, [isRunning, timeLeft]);
 
+  useEffect(() => {
+    localStorage.setItem(TIMER_STORAGE_KEY, JSON.stringify(state));
+  }, [state]);
+
   function handleModeChange(mode: TimerMode) {
-    setActiveMode(mode);
-    setTimeLeft(durations[mode]);
-    setIsRunning(false);
+    setState((previousState) => ({
+      ...previousState,
+      activeMode: mode,
+      timeLeft: previousState.durations[mode],
+      isRunning: false,
+      lastUpdatedAt: null,
+    }));
   }
 
   function handleReset() {
-    setTimeLeft(durations[activeMode]);
-    setIsRunning(false);
+    setState((previousState) => ({
+      ...previousState,
+      timeLeft: previousState.durations[previousState.activeMode],
+      isRunning: false,
+      lastUpdatedAt: null,
+    }));
   }
 
   function handleSkip() {
     const nextMode = activeMode === "focus" ? "shortBreak" : "focus";
-    handleModeChange(nextMode);
+
+    setState((previousState) => ({
+      ...previousState,
+      activeMode: nextMode,
+      timeLeft: previousState.durations[nextMode],
+      isRunning: false,
+      lastUpdatedAt: null,
+    }));
   }
 
   function handleToggle() {
-    if (timeLeft === 0) return;
-    setIsRunning((prev) => !prev);
+    setState((previousState) => {
+      if (previousState.timeLeft === 0) return previousState;
+
+      const nextIsRunning = !previousState.isRunning;
+
+      return {
+        ...previousState,
+        isRunning: nextIsRunning,
+        lastUpdatedAt: nextIsRunning ? Date.now() : null,
+      };
+    });
   }
 
   function updateDurations(newDurationsInMinutes: Record<TimerMode, number>) {
@@ -65,9 +178,13 @@ export function useTimer(initialMode: TimerMode = "focus") {
       longBreak: newDurationsInMinutes.longBreak * 60,
     };
 
-    setDurations(newDurationsInSeconds);
-    setTimeLeft(newDurationsInSeconds[activeMode]);
-    setIsRunning(false);
+    setState((previousState) => ({
+      ...previousState,
+      durations: newDurationsInSeconds,
+      timeLeft: newDurationsInSeconds[previousState.activeMode],
+      isRunning: false,
+      lastUpdatedAt: null,
+    }));
   }
 
   return {

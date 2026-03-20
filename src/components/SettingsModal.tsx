@@ -29,7 +29,12 @@ export default function SettingsModal({
         longBreak: currentDurations.longBreak,
       });
     }
-  }, [isOpen, currentDurations]);
+  }, [
+    isOpen,
+    currentDurations.focus,
+    currentDurations.shortBreak,
+    currentDurations.longBreak,
+  ]);
 
   useEffect(() => {
     if (!isOpen) return;

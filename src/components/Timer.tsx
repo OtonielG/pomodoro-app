@@ -117,6 +117,7 @@ export default function Timer() {
 
       <div className="flex items-center justify-center gap-[clamp(0.75rem,2vw,1rem)]">
         <button
+          aria-label="Reset timer"
           onClick={handleReset}
           className="rounded-full bg-teal-800/30 p-[clamp(0.65rem,1.4vw,1rem)] flex items-center justify-center cursor-pointer transition-transform duration-300 hover:scale-110 hover:bg-teal-800/50"
         >
@@ -126,6 +127,7 @@ export default function Timer() {
         <button
           onClick={handlePlayPause}
           disabled={isFinished}
+          aria-label="Start timer"
           className="
             group flex items-center justify-center
             w-[clamp(5rem,10vw,7rem)] h-[clamp(5rem,10vw,7rem)]
@@ -150,6 +152,7 @@ export default function Timer() {
         </button>
 
         <button
+          aria-label="Skip session"
           onClick={handleSkip}
           className="rounded-full bg-teal-800/30 p-[clamp(0.65rem,1.4vw,1rem)] flex items-center justify-center cursor-pointer transition-transform duration-300 hover:scale-110 hover:bg-teal-800/50"
         >
